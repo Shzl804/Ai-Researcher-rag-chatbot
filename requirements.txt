@@ -1,0 +1,19 @@
+# API server
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Frontend
+streamlit
+
+# Document processing
+PyMuPDF
+
+# RAG building blocks
+langchain-core
+langchain-text-splitters
+langchain-groq
+chromadb
+
+# Configuration
+python-dotenv
