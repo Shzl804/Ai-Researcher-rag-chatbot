@@ -14,6 +14,7 @@ langchain-core
 langchain-text-splitters
 langchain-groq
 chromadb
+sentence-transformers
 
 # Configuration
 python-dotenv
