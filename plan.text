@@ -151,16 +151,212 @@ GET /health
 
 Phase 8: Build the Streamlit frontend
 --------------------------------------
-1. Add a PDF uploader.
-2. Add an upload/process button.
-3. Display processing success or errors.
-4. Add a question input and ask button.
-5. Send requests to the FastAPI backend.
-6. Display the answer.
-7. Display citations in a readable format:
-   [1] filename.pdf - Page 4
-8. Display useful loading and error states.
-9. Keep the UI simple until the complete workflow works.
+Purpose
+-------
+Create a simple user interface that communicates with the FastAPI backend.
+Streamlit should handle presentation and user interaction only. PDF extraction,
+chunking, embeddings, ChromaDB, retrieval, and Groq generation must remain in
+the backend.
+
+Frontend file
+-------------
+Implement the interface in:
+
+frontend/streamlit_app.py
+
+Frontend responsibilities
+--------------------------
+- Collect a PDF from the user.
+- Send the PDF to the upload endpoint.
+- Collect a question from the user.
+- Send the question to the query endpoint.
+- Display the answer and source citations.
+- Display loading, success, and error states.
+
+Backend URL configuration
+-------------------------
+1. Choose a default backend URL:
+   http://127.0.0.1:8000
+2. Allow the URL to be configured through an environment variable such as:
+   API_URL=http://127.0.0.1:8000
+3. Load the environment variable from `.env`.
+4. Keep the backend URL in one variable instead of repeating it throughout the
+   frontend.
+
+Page layout
+-----------
+Organize the page into these areas:
+
+1. Page title and short description.
+2. Backend connection section.
+3. Document upload section.
+4. Indexing result section.
+5. Question section.
+6. Answer section.
+7. Sources section.
+
+Step 1: Add page configuration
+------------------------------
+1. Set the page title.
+2. Set a suitable layout.
+3. Add the application title.
+4. Add a short description explaining that answers come from uploaded PDFs.
+
+Step 2: Add backend health checking
+-----------------------------------
+1. Add a button for checking the backend.
+2. Send a GET request to `/health`.
+3. Set a reasonable request timeout.
+4. Show a success message when the response status is successful.
+5. Show an error message when the backend is unavailable.
+6. Catch connection and timeout errors so the UI does not crash.
+
+Step 3: Add PDF upload controls
+-------------------------------
+1. Add a file uploader that accepts PDF files only.
+2. Add a process or upload button.
+3. Do not send a request when no file has been selected.
+4. Show a warning when the user presses the button without a file.
+5. Read the selected file as bytes.
+6. Send it as multipart form data to:
+   POST /documents/upload
+7. Set a longer timeout because embedding a document can take time.
+
+Step 4: Handle the upload response
+----------------------------------
+The backend should return information similar to:
+
+{
+    "source": "paper.pdf",
+    "pages": 10,
+    "chunks": 42
+}
+
+1. Check whether the response was successful.
+2. Display the uploaded filename.
+3. Display the number of extracted pages.
+4. Display the number of created chunks.
+5. Tell the user that the document is ready for questions.
+6. Display backend error details when indexing fails.
+7. Store the latest indexing result in Streamlit session state if it should
+   remain visible after a page rerun.
+
+Step 5: Add question controls
+-----------------------------
+1. Add a text input or text area for the question.
+2. Add an ask button.
+3. Add a control for the number of retrieved chunks.
+4. Use a default value such as 4.
+5. Do not send an empty question.
+6. Show a warning when the ask button is pressed without a question.
+
+Step 6: Send the question to the backend
+----------------------------------------
+1. Build a JSON request:
+
+{
+    "question": "What is machine learning?",
+    "number_of_results": 4
+}
+
+2. Send the request to:
+   POST /query
+3. Set a timeout long enough for retrieval and Groq generation.
+4. Show a loading indicator while waiting.
+5. Catch connection, timeout, and HTTP errors.
+
+Step 7: Display the answer
+--------------------------
+The backend response should contain:
+
+{
+    "answer": "Generated answer...",
+    "sources": []
+}
+
+1. Check that the response is successful.
+2. Display the answer in a clearly labeled section.
+3. Handle a missing or empty answer gracefully.
+4. Do not generate or edit the answer in the frontend.
+5. Keep the answer returned by the backend unchanged.
+
+Step 8: Display citations
+-------------------------
+1. Read the `sources` list from the response.
+2. Display each source with a number.
+3. Show the filename and page number.
+4. Use this format:
+   [1] paper.pdf - Page 4
+5. Display a message when no citations are returned.
+6. Do not ask the LLM to create citations in the frontend. Citations must come
+   from the metadata returned by the backend.
+
+Step 9: Add user-facing error states
+------------------------------------
+Handle these cases clearly:
+
+- FastAPI is not running.
+- The selected file is not a PDF.
+- The uploaded PDF is empty or has no extractable text.
+- PDF indexing fails.
+- The question is empty.
+- The query request times out.
+- The Groq API returns an error through the backend.
+- The backend returns no sources.
+
+Every error should explain what failed without displaying API keys or other
+secrets.
+
+Step 10: Use Streamlit session state
+------------------------------------
+Use session state only for small UI values, such as:
+
+- Backend URL
+- Latest indexing result
+- Latest answer
+- Latest source list
+
+Do not store the full PDF, embeddings, or ChromaDB data in Streamlit session
+state. Those belong in the backend and local storage.
+
+Step 11: Run the frontend
+-------------------------
+1. Activate the virtual environment.
+2. Start FastAPI in the first terminal:
+   uvicorn app.main:app --reload
+3. Start Streamlit in the second terminal:
+   streamlit run frontend/streamlit_app.py
+4. Open the URL printed by Streamlit, usually:
+   http://localhost:8501
+
+Step 12: Test the frontend manually
+-----------------------------------
+1. Open the Streamlit page.
+2. Check the backend health status.
+3. Upload one valid technical PDF.
+4. Confirm the indexing result is displayed.
+5. Ask a question whose answer is clearly present.
+6. Confirm the answer appears.
+7. Confirm filename and page citations appear.
+8. Ask a question not covered by the PDF.
+9. Confirm the system reports that the answer was not found.
+10. Try submitting an empty question.
+11. Try starting Streamlit while FastAPI is stopped.
+12. Try uploading an invalid file.
+13. Upload a second PDF and confirm it can also be indexed.
+
+Frontend completion condition
+-----------------------------
+The frontend phase is complete when a user can:
+
+1. Open the Streamlit interface.
+2. Check the backend connection.
+3. Upload a PDF.
+4. Wait for indexing to finish.
+5. Ask a question.
+6. See a grounded answer.
+7. See the source filename and page number.
+8. Understand errors without reading the terminal.
 
 Phase 9: Complete MVP testing
 -----------------------------

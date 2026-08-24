@@ -5,6 +5,7 @@ python-multipart
 
 # Frontend
 streamlit
+requests
 
 # Document processing
 PyMuPDF
