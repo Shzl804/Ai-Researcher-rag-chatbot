@@ -1,9 +1,8 @@
 from sentence_transformers import SentenceTransformer
-
-MODEL_NAME = "all-MiniLM-L6-v2"
+from app.config import EMBEDDING_MODEL_NAME
 
 def create_embeddings(chunks: list[dict]) -> list[dict]:
-    model = SentenceTransformer(MODEL_NAME)
+    model = SentenceTransformer(EMBEDDING_MODEL_NAME)
 
     texts = [chunk['text'] for chunk in chunks]
     vectors = model.encode(

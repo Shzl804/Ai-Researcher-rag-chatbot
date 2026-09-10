@@ -50,7 +50,7 @@ class RAGPipeline:
         )
         if not retrieved_chunks:
             return {
-                "answer": "I could not find the answer in the uploaded documents,",
+                "answer": "I could not find the answer in the indexed documents.",
                 "sources": [],
             }
         answer = self.answer_generator.generate_answer(
@@ -82,3 +82,14 @@ class RAGPipeline:
             "answer": answer,
             "sources": sources
         }
+    def index_directory(self, directory) -> list[dict]:
+        directory = Path(directory)
+        results = []
+
+        for pdf_path in directory.glob("*.pdf"):
+            try:
+                results.append(self.index_pdf(str(pdf_path)))
+            except Exception as error:
+                results.append({"source": pdf_path.name, "error": str(error)})
+
+        return results

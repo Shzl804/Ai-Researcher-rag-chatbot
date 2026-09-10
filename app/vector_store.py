@@ -1,22 +1,20 @@
 from pathlib import Path
 import chromadb
 from sentence_transformers import SentenceTransformer
-
-CHROMA_PATH = Path("chroma_db")
-COLLECTION_NAME = "research_documents"
-MODEL_NAME = "all-MiniLM-L6-v2"
+from app.config import CHROMA_PATH, COLLECTION_NAME, EMBEDDING_MODEL_NAME
 
 class VectorStore:
     def __init__(self):
         self.client = chromadb.PersistentClient(
-            path = str(CHROMA_PATH)
+            path=str(CHROMA_PATH)
         )
 
         self.collection = self.client.get_or_create_collection(
-            name = COLLECTION_NAME
+            name=COLLECTION_NAME,
+            metadata={"hnsw:space": "cosine"},
         )
 
-        self.embedding_model = SentenceTransformer(MODEL_NAME)
+        self.embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
     def add_chunks(self, embedded_chunks: list[dict]) -> None:
         self.collection.upsert(
             ids=[

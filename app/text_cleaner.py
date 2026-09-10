@@ -1,7 +1,7 @@
 import re 
 
 def remove_emails(text: str) -> str:
-    email_patterns = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-za-z]{2,}\b"
+    email_patterns = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
     return re.sub(email_patterns, " ", text)
 
 def remove_urls(text: str) -> str:

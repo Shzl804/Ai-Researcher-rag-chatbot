@@ -21,7 +21,7 @@ Implemented:
 - Sentence-transformer embeddings using `all-MiniLM-L6-v2`
 - Persistent ChromaDB storage and similarity search
 - Groq-powered grounded answer generation
-- FastAPI health, upload, and query endpoints
+- FastAPI health and query endpoints
 - Tests for the document-processing and vector-store components
 
 Still to verify or improve:
@@ -233,17 +233,6 @@ Checks that the API is running.
 curl http://127.0.0.1:8000/health
 ```
 
-### `POST /documents/upload`
-
-Uploads and indexes one PDF. The document is saved in `data/documents/`,
-cleaned, chunked, embedded, and stored in `chroma_db/`.
-
-```bash
-curl -X POST \\
-	-F "file=@data/documents/dropout.pdf" \\
-	http://127.0.0.1:8000/documents/upload
-```
-
 ### `POST /query`
 
 Retrieves relevant chunks and asks Groq to generate a grounded answer.
@@ -272,10 +261,10 @@ Start Streamlit from the repository root in another terminal:
 streamlit run frontend/streamlit_app.py
 ```
 
-The interface lets you check the backend, upload and index a PDF, ask a
-question, and view the generated answer with source page citations. The
-frontend uses `http://127.0.0.1:8000` by default. Set `API_URL` in `.env` to
-use a different backend URL.
+The interface lets you check the backend, ask a question, and view the
+generated answer with source page citations. The frontend uses
+`http://127.0.0.1:8000` by default. Set `API_URL` in `.env` to use a
+different backend URL.
 
 ## RAG Pipeline
 
