@@ -1,302 +1,137 @@
-# AI Researcher RAG Chatbot
+# AI Researcher — RAG Chatbot
 
-An educational retrieval-augmented generation (RAG) project for asking
-questions about technical PDF documents. The project is being built
-incrementally to demonstrate the main steps of a document-based AI system:
-PDF extraction, text cleaning, chunking, embeddings, vector search, and
-grounded answer generation.
+A Retrieval-Augmented Generation (RAG) chatbot that answers questions about your own PDF documents — grounded strictly in their content, with page-level citations, and a clear refusal when the answer isn't present.
 
-## Project Status
+Built as part of an AI/ML Engineer Internship technical case study.
 
-The project is currently in MVP development. The document processing,
-embedding, vector storage, RAG pipeline, Groq generation, FastAPI backend, and
-Streamlit interface are implemented. Final end-to-end verification and
-hardening are still pending.
+## Features
 
-Implemented:
+- Upload PDFs and have them automatically chunked, embedded, and indexed
+- Ask natural-language questions and get answers generated only from retrieved context
+- Every answer cites the source document and page number
+- Refuses to answer (instead of hallucinating) when the documents don't cover the question
+- FastAPI backend + Streamlit chat-style frontend
+- Local, persistent vector storage (no external vector DB service required)
 
-- Page-by-page PDF text extraction with source and page metadata
-- Basic text cleaning with regular expressions
-- Recursive text chunking with metadata preservation
-- Sentence-transformer embeddings using `all-MiniLM-L6-v2`
-- Persistent ChromaDB storage and similarity search
-- Groq-powered grounded answer generation
-- FastAPI health and query endpoints
-- Tests for the document-processing and vector-store components
+## How it works
 
-Still to verify or improve:
-
-- Full upload-to-answer integration testing
-- Improved duplicate document handling and error validation
-
-The application is not yet a complete chat interface.
-
-## Problem
-
-Technical information is often spread across research papers, notes, and
-documentation. This project aims to help a student or researcher upload those
-documents and ask questions while seeing the source document and page used for
-the answer.
-
-Example question:
-
-```text
-What is the main contribution of this paper?
+```
+PDF upload
+  -> PyMuPDF page extraction
+  -> regex-based text cleaning
+  -> recursive chunking (chunk_size=1000, overlap=150)
+  -> sentence-transformer embeddings (all-MiniLM-L6-v2)
+  -> ChromaDB persistence
+  -> similarity search on user query
+  -> Groq LLM answers using only retrieved chunks
+  -> answer + source citations returned
 ```
 
-The intended answer flow is:
+## Tech stack
 
-```text
-PDF
-	-> extract page text
-	-> clean text
-	-> create chunks
-	-> create embeddings
-	-> store in ChromaDB
-	-> retrieve relevant chunks
-	-> ask Groq using retrieved context
-	-> return answer and citations
+| Layer | Choice |
+|---|---|
+| Backend | FastAPI |
+| Frontend | Streamlit |
+| PDF parsing | PyMuPDF |
+| Chunking | LangChain `RecursiveCharacterTextSplitter` |
+| Embeddings | `sentence-transformers` (`all-MiniLM-L6-v2`) |
+| Vector store | ChromaDB (persistent, local) |
+| LLM | Groq API |
+
+## Project structure
+
 ```
-
-## Technology Stack
-
-- Python
-- FastAPI backend API
-- Streamlit frontend
-- PyMuPDF for PDF text extraction
-- Python regular expressions for basic text cleaning
-- LangChain text splitters for chunking
-- Sentence Transformers for embeddings
-- `all-MiniLM-L6-v2` for a small local embedding model
-- ChromaDB for persistent local vector storage
-- Groq API for answer generation
-- Git and GitHub for version control
-
-## Project Structure
-
-```text
 ai-researcher-rag-chatbot/
 ├── app/
-│   ├── chunker.py          # Split extracted text into chunks
-│   ├── config.py           # Application configuration placeholder
-│   ├── embeddings.py       # Create sentence-transformer embeddings
-│   ├── main.py             # FastAPI application and routes
-│   ├── pdf_loader.py       # Extract PDF text with page metadata
-│   ├── rag.py              # Indexing, retrieval, and answer orchestration
-│   └── text_cleaner.py     # Remove unwanted text patterns
-├── data/
-│   └── documents/          # Local PDFs; ignored by Git
-├── chroma_db/              # Local vector database; ignored by Git
-├── tests/
-│   ├── test_chunker.py
-│   ├── test_embeddings.py
-│   ├── test_pdf_loader.py
-│   └── test_text_cleaner.py
+│   ├── main.py             # FastAPI app and routes
+│   ├── config.py           # Central configuration (paths, model names, thresholds)
+│   ├── pdf_loader.py        # PDF text extraction with page metadata
+│   ├── text_cleaner.py     # Regex-based text cleaning
+│   ├── chunker.py          # Splits cleaned text into overlapping chunks
+│   ├── embeddings.py       # Converts chunks into vector embeddings
+│   ├── vector_store.py     # ChromaDB storage and similarity search
+│   ├── generator.py        # Groq LLM prompt + answer generation
+│   └── rag.py               # Orchestrates the full pipeline
 ├── frontend/
-│   └── streamlit_app.py    # Streamlit frontend
-├── .env                    # Local secrets; ignored by Git
-├── .gitignore
-├── plan.text               # Full MVP development plan
+│   └── streamlit_app.py    # Chat-style Streamlit UI
+├── tests/                   # Unit tests per component
+├── data/documents/          # Local PDFs (gitignored)
+├── chroma_db/                # Vector database files (gitignored)
+├── .env                      # Local secrets (gitignored)
 ├── requirements.txt
 └── README.md
 ```
 
-## Requirements
-
-- Python 3.10 or newer
-- Git
-- Internet access for installing packages and downloading the embedding model
-- A Groq API key for answer generation
-
-The current embedding tests run locally on CPU. A GPU is not required.
-
 ## Setup
 
-Clone the repository and enter the project directory:
+**Requirements:** Python 3.10+, a Groq API key, internet access (for installing packages and downloading the embedding model on first run).
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ai-researcher-rag-chatbot.git
-cd ai-researcher-rag-chatbot
-```
+git clone https://github.com/Shzl804/Ai-Researcher-rag-chatbot.git
+cd Ai-Researcher-rag-chatbot
 
-Create and activate a virtual environment:
-
-```bash
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-Install the dependencies:
+Create a `.env` file in the project root:
 
-```bash
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
 ```
-
-On Debian-based Linux systems, do not install these project packages into the
-system Python. Use the project `.venv` as shown above.
-
-## Environment Variables
-
-Create a local `.env` file:
-
-```env
 GROQ_API_KEY=your_groq_api_key_here
-GROQ_MODEL=your_available_groq_model
+GROQ_MODEL=llama-3.1-70b-versatile
 ```
 
-Never commit `.env` or a real API key. The `.gitignore` file excludes `.env`.
+## Running the app
 
-## Add Documents
-
-Place local PDF files in:
-
-```text
-data/documents/
-```
-
-These files are intentionally ignored by Git. Do not upload private documents,
-large files, or documents you are not allowed to redistribute to GitHub.
-
-## Run Tests
-
-Run commands from the repository root with the virtual environment activated:
-
-```bash
-python -m tests.test_pdf_loader
-python -m tests.test_text_cleaner
-python -m tests.test_chunker
-python -m tests.test_embeddings
-python -m tests.test_vector_store
-python -m tests.test_rag
-python -m tests.test_generator
-```
-
-The embedding test may take longer the first time because
-`all-MiniLM-L6-v2` must be downloaded and loaded. It produces vectors with
-384 dimensions.
-
-## Current Learning Objectives
-
-This project is also a learning exercise. The important concepts are:
-
-1. Extract text while preserving document location metadata.
-2. Clean text without destroying useful technical information.
-3. Split long documents into retrieval-friendly chunks.
-4. Convert each chunk into a numerical embedding.
-5. Store and search embeddings using a vector database.
-6. Generate answers only from retrieved context.
-7. Show source citations instead of relying on unsupported model claims.
-
-## Security and Repository Rules
-
-Do not commit:
-
-- `.env` files or API keys
-- `.venv/`
-- `chroma_db/`
-- Private or copyrighted PDFs in `data/documents/`
-- Python cache files
-
-Before committing, check the files Git will include:
-
-```bash
-git status
-git diff --cached
-```
-
-## Run the FastAPI Backend
-
-Start the API from the repository root:
-
+Start the backend:
 ```bash
 uvicorn app.main:app --reload
 ```
+API docs available at `http://127.0.0.1:8000/docs`
 
-Open the interactive API documentation at:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-Available endpoints:
-
-### `GET /`
-
-Returns a basic application message.
-
-### `GET /health`
-
-Checks that the API is running.
-
-```bash
-curl http://127.0.0.1:8000/health
-```
-
-### `POST /query`
-
-Retrieves relevant chunks and asks Groq to generate a grounded answer.
-
-```bash
-curl -X POST \\
-	-H "Content-Type: application/json" \\
-	-d '{"question":"What is machine learning?","number_of_results":4}' \\
-	http://127.0.0.1:8000/query
-```
-
-The response contains an answer and source metadata with document names and
-page numbers.
-
-## Run the Streamlit Frontend
-
-Start FastAPI first in one terminal:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-Start Streamlit from the repository root in another terminal:
-
+In a second terminal, start the frontend:
 ```bash
 streamlit run frontend/streamlit_app.py
 ```
 
-The interface lets you check the backend, ask a question, and view the
-generated answer with source page citations. The frontend uses
-`http://127.0.0.1:8000` by default. Set `API_URL` in `.env` to use a
-different backend URL.
+Open the Streamlit URL it prints, upload a PDF from the sidebar, then ask a question in the chat box.
 
-## RAG Pipeline
+## API endpoints
 
-The current backend follows this flow:
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | Health check |
+| POST | `/documents/upload` | Upload a PDF — saves it, then chunks, embeds, and indexes it |
+| POST | `/documents/index` | Index a PDF already present on disk by path |
+| POST | `/documents/index-folder` | Index every PDF currently in `data/documents/` |
+| POST | `/query` | Ask a question; returns `{ "answer": ..., "sources": [...] }` |
 
-```text
-PDF upload
-	-> PyMuPDF page extraction
-	-> regex text cleaning
-	-> recursive chunking
-	-> all-MiniLM-L6-v2 embeddings
-	-> ChromaDB persistence
-	-> similarity retrieval
-	-> Groq prompt with retrieved context
-	-> answer and source metadata
-```
+## Design decisions
 
-The application creates citations from ChromaDB metadata instead of asking the
-LLM to invent page numbers.
+- **Chunk size 1000 / overlap 150** — large enough to preserve context within a chunk, with overlap so an idea split across a chunk boundary isn't lost.
+- **`all-MiniLM-L6-v2` for embeddings** — small, fast, runs locally on CPU with no external API call or cost, sufficient quality for a document set of this size.
+- **ChromaDB over FAISS/Pinecone** — persistent by default with a simple API, and doesn't require external infrastructure or an account, appropriate for a local/small-scale project.
+- **`k=4` retrieved chunks by default** — balances enough context for the LLM against diluting the prompt with irrelevant matches; adjustable per query.
+- **Similarity distance threshold** — chunks below the relevance cutoff are excluded before generation, so the model can correctly say "I don't know" instead of being handed weak matches and guessing.
+- **Groq for generation** — fast inference at low cost, with `temperature=0` to keep answers deterministic and grounded rather than creative.
+
+## Known limitations
+
+- Basic retrieval will not reliably combine facts that require synthesizing two unrelated documents — it retrieves by similarity to the original question, not by multi-hop reasoning.
+- Scaling from a handful of documents to thousands would require incremental indexing (avoiding full re-embedding) and likely a re-ranking step to keep retrieval precision high.
+- Currently supports PDF input only.
 
 ## Roadmap
 
-The MVP will be completed in this order:
-
-1. Verify the complete upload-to-answer workflow.
-2. Improve validation and duplicate document handling.
-3. Add screenshots and a short demo.
-4. Add further features only after the MVP is stable.
-
-More detailed steps are in [plan.text](plan.text).
+- [ ] Full upload-to-answer integration testing
+- [ ] Improved duplicate-document handling and input validation
+- [ ] Demo screenshots / screen recording
+- [ ] Plain-text document support
 
 ## License
 
-No license has been selected yet. Add an appropriate license before treating
-this repository as a public reusable project.
+No license selected yet.
