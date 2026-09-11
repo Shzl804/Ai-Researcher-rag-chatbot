@@ -58,6 +58,14 @@ class RAGPipeline:
             retrieved_chunks=retrieved_chunks,
         )
 
+        NOT_FOUND_PHRASE = "i could not find the answer"
+
+        if NOT_FOUND_PHRASE in answer.strip().lower():
+            return {
+                "answer": answer,
+                "sources": [],
+            }
+
         sources = []
         seen_sources = set()
 
