@@ -13,6 +13,12 @@ Built as part of an AI/ML Engineer Internship technical case study.
 - FastAPI backend + Streamlit chat-style frontend
 - Local, persistent vector storage (no external vector DB service required)
 
+## Demo
+
+Watch a short demo showing 3 questions answered correctly with citations, and 1 question correctly refused:
+
+[Demo video on YouTube](https://youtu.be/cUxxP-DOUOc)
+
 ## How it works
 
 ```
